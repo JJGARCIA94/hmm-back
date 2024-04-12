@@ -11,8 +11,6 @@ exports.getDoctors = async (req, res) => {
   }
 };
 
-
-
 exports.getsearchDoctors = async (req, res) => {
   try {
     const { idSpeciality, idHospital } = req.params;
