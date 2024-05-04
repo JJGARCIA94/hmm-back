@@ -11,6 +11,30 @@ exports.getDoctors = async (req, res) => {
   }
 };
 
+exports.getDoctorsBySpecialty = async (req, res) => {
+  try {
+    const { idSpeciality } = req.params;
+    const separator = ';';
+    const strReplace = ', '
+    const strLastReplace = ' y ';
+
+    const [rows] = await db.query(`SELECT doctors.*, specialties.specialties, specialties.derivations, studies.studies, procedures.procedures, courses.courses FROM doctors INNER JOIN specialties_doctor ON specialties_doctor.idDoctor = doctors.id LEFT JOIN (SELECT idDoctor, GROUP_CONCAT(specialties.name SEPARATOR ?) AS specialties, GROUP_CONCAT(specialties.derivation SEPARATOR ';') AS derivations FROM specialties_doctor LEFT JOIN specialties ON specialties.id = specialties_doctor.idSpecialty GROUP BY idDoctor) AS specialties ON specialties.idDoctor = doctors.id LEFT JOIN (SELECT idDoctor, GROUP_CONCAT(studies_doctors.description SEPARATOR ?) AS studies FROM studies_doctors GROUP BY idDoctor) AS studies ON studies.idDoctor = doctors.id LEFT JOIN (SELECT idDoctor, GROUP_CONCAT(procedures_doctors.description SEPARATOR ?) AS procedures FROM procedures_doctors GROUP BY idDoctor) AS procedures ON procedures.idDoctor = doctors.id LEFT JOIN (SELECT idDoctor, GROUP_CONCAT(courses_doctors.description SEPARATOR ?) AS courses FROM courses_doctors GROUP BY idDoctor) AS courses ON courses.idDoctor = doctors.id WHERE doctors.status = 1 AND specialties_doctor.idSpecialty = ?`, [separator, separator, separator, separator, idSpeciality]);
+
+    rows.forEach(row => {
+      row.specialties = row.specialties?.split(separator);
+      row.derivations = replaceStrTwoCharacters(row.derivations, separator, strReplace, strLastReplace);
+      row.studies = row.studies?.split(separator);
+      row.procedures = row.procedures?.split(separator);
+      row.courses = row.courses?.split(separator);
+    });
+
+    res.json(rows);
+  } catch (error) {
+    console.error('Error en getDoctorsBySpecialty:', error);
+    res.status(500).json({ error: 'Error en getDoctorsBySpecialty' });
+  }
+};
+
 exports.getsearchDoctors = async (req, res) => {
   try {
     const { idSpeciality, idHospital } = req.params;
