@@ -10,6 +10,27 @@ exports.getSpecialties = async (req, res) => {
   }
 };
 
+exports.getSpecialtiesPagination = async (req, res) => {
+  try {
+    const page = parseInt(req.params.page) || 1;
+    const pageSize = 10;
+
+    const offset = (page - 1) * pageSize;
+
+    const [totalRows] = await db.query('SELECT COUNT(*) AS total FROM specialties WHERE STATUS = 1');
+    const total = totalRows[0].total;
+
+    const [rows] = await db.query('SELECT * FROM specialties WHERE status = 1 LIMIT ? OFFSET ?', [pageSize, offset]);
+    res.json({
+      result: rows,
+      total: total
+    });
+  } catch (error) {
+    console.error('Error en getSpecialtiesPagination:', error);
+    res.status(500).json({ error: 'Error en getSpecialtiesPagination' });
+  }
+};
+
 exports.getSpecialtyById = async (req, res) => {
   try {
     const { id } = req.params;
